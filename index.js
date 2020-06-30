@@ -10,12 +10,14 @@ const app = express();
 
 app.use(bodyParser.json())
 
-fs.readdir(`${__dirname}/api`, (err, files) => {
+console.log(`Watching ${process.cwd()}/api`);
+
+fs.readdir(`${process.cwd()}/api`, (err, files) => {
   files.forEach(file => {
     const match = /^(.*)\.js$/.exec(file);
     if (match) {
       const url = `/api/${match[1]}`;
-      app.use(url, require(`${__dirname}/api/${file}`));
+      app.use(url, require(`${process.cwd()}/api/${file}`));
       process.stdout.write(`- created route ${url}\n`);
     }
   });

@@ -35,7 +35,14 @@ app.use(bodyParser.json());
 
 app.use((req, res) => {
   if (lambdas.hasOwnProperty(req.path)) {
-    lambdas[req.path](req, res);
+    try {
+      const result = lambdas[req.path](req, res);
+      if (result.catch) {
+        result.catch(e => res.status(500).send(e.message));
+      }
+    } catch(e) {
+      res.status(500).send(e.message);
+    }
   } else {
     res.status(404).send("Not found");
   }

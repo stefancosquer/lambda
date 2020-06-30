@@ -8,6 +8,8 @@ const port = process.env.PORT | 8080;
 const dir = `${process.cwd()}/api`;
 const lambdas = {};
 
+/** Lambda function loader **/
+
 let lastModified = 0;
 const loader = () => {
   const currentLastModified = fs.readdirSync(dir).map(file => fs.statSync(`${dir}/${file}`).mtimeMs).reduce((acc, cur) => Math.max(acc, cur), 0);
@@ -28,10 +30,11 @@ const loader = () => {
 setInterval(loader, 1000);
 setImmediate(loader);
 
+/** Express server **/
+
 const app = express();
 
 app.use(bodyParser.json());
-
 
 app.use((req, res) => {
   if (lambdas.hasOwnProperty(req.path)) {

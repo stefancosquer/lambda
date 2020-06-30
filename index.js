@@ -5,22 +5,40 @@ const express = require("express");
 const bodyParser = require("body-parser");
 
 const port = process.env.PORT | 8080;
+const dir = `${process.cwd()}/api`;
+const lambdas = {};
+
+let lastModified = 0;
+const loader = () => {
+  const currentLastModified = fs.readdirSync(dir).map(file => fs.statSync(`${dir}/${file}`).mtimeMs).reduce((acc, cur) => Math.max(acc, cur), 0);
+  if (currentLastModified > lastModified) {
+    lastModified = currentLastModified;
+    Object.keys(lambdas).forEach(function(key) { delete lambdas[key]; });
+    fs.readdirSync(dir).forEach(file => {
+      const match = /^(.*)\.js$/.exec(file);
+      if (match) {
+        const url = `/api/${match[1]}`;
+        delete require.cache[`${dir}/${file}`];
+        lambdas[url] = require(`${dir}/${file}`);
+        process.stdout.write(`Created route ${url}\n`);
+      }
+    });
+  }
+}
+setInterval(loader, 1000);
+setImmediate(loader);
 
 const app = express();
 
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 
-console.log(`Watching ${process.cwd()}/api`);
 
-fs.readdir(`${process.cwd()}/api`, (err, files) => {
-  files.forEach(file => {
-    const match = /^(.*)\.js$/.exec(file);
-    if (match) {
-      const url = `/api/${match[1]}`;
-      app.use(url, require(`${process.cwd()}/api/${file}`));
-      process.stdout.write(`- created route ${url}\n`);
-    }
-  });
+app.use((req, res) => {
+  if (lambdas.hasOwnProperty(req.path)) {
+    lambdas[req.path](req, res);
+  } else {
+    res.status(404).send("Not found");
+  }
 });
 
 app.listen(port);

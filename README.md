@@ -28,5 +28,5 @@ $ npm start
 
 It can also be run using npx:
 ```
-$ npx git+ssh://github.com:digital4better/lambda.git
+$ npx git+ssh://github.com:stefancosquer/lambda.git
 ```
